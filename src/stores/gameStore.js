@@ -16,10 +16,10 @@ export const useGameStore = defineStore('game', {
       ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
       ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
       ['|', '.', '.', '.', '[', '-', ']', '.', '.', '.', '[', '-', '-', '-', '-', '-', '-', ']', '.', '|'],
-      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '_', '.', '.', '.', '.', '.', '.', '.', '|'],
+      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
       ['|', '.', '[', ']', '.', '^', '.', '[', ']', '.', '.', '.', '[', ']', '.', '^', '.', '[', ']', '|'],
       ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'b', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
-      ['|', '.', '.', '.', '[', '-', ']', '.', '.', '-', 'X', '-', '.', '.', '-', '-', '[', '+', ']', '|'],
+      ['|', '.', '.', '.', '[', '-', ']', '.', '.', '-', 'X', '-', '.', '.', '-', '-', '[', '-', ']', '|'],
       ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
       ['|', '.', '[', ']', '.', '^', '.', '[', ']', '.', '.', '.', '[', ']', '.', '^', '.', '[', ']', '|'],
       ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '.', '.', '.', '.', '.', '|'],
@@ -56,51 +56,58 @@ export const useGameStore = defineStore('game', {
       }
     },
     movePacMan() {
-      const nextX = this.pacManPosition.x + this.pacManDirection.x * this.pacManSpeed;
-      const nextY = this.pacManPosition.y + this.pacManDirection.y * this.pacManSpeed;
+      const nextX = Math.round(this.pacManPosition.x + this.pacManDirection.x * this.pacManSpeed);
+      const nextY = Math.round(this.pacManPosition.y + this.pacManDirection.y * this.pacManSpeed);
 
       // Check map and boundary collisions
-      if (this.isCellWalkable(nextX, nextY, this.pacManPosition.x, this.pacManPosition.y) && this.isInGameBoundaries(nextX, nextY)) {
+      if (this.isCellWalkable(nextX, nextY, this.pacManDirection) && this.isInGameBoundaries(nextX, nextY)) {
         this.pacManPosition.x = nextX;
         this.pacManPosition.y = nextY;
       }
     },
-    isCellWalkable(nextX, nextY, currX, currY) {
-      const cellX = Math.floor(nextX / this.cellWidth);
-      const cellY = Math.floor(nextY / this.cellHeight);
-      let cellBottomBoundary = (cellY + 1)  * this.cellHeight;
-      let cellRightBoundary = (cellX + 1) * this.cellWidth;
+    isCellWalkable(nextX, nextY, direction) {
+      const checkPoint = (x, y) => {
+        const cellX = Math.floor(x / this.cellWidth);
+        const cellY = Math.floor(y / this.cellHeight);
+        const cellValue = this.map[cellY]?.[cellX];
+        console.log(`Checking cell at (${cellX}, ${cellY}): ${cellValue}`);
+        return cellValue === '.' || cellValue === 'b' || cellValue === '^'; // Walkable cells
+      };
 
-      
-      const cellX_direction_down_right = Math.floor((nextX + this.pacManRadius * 2) / this.cellWidth);
-      const cellY_direction_down_right = Math.floor((nextY + this.pacManRadius * 2) / this.cellHeight);
-      let cellTopBoundary = cellY_direction_down_right * this.cellHeight;
-      let cellLeftBoundary = cellX_direction_down_right * this.cellWidth;
+      let pointsToCheck = [];
 
-      const cell_direction_right = this.map[cellY][cellX_direction_down_right];
-      const cell_direction_down = this.map[cellY_direction_down_right][cellX];
-      //const cell_direction_down_right = this.map[cellY_direction_down_right][cellX_direction_down_right];
-      const cell_direction_up_left = this.map[cellY][cellX];
-
-      if (currY < nextY) { // PacMan going down
-        if (cell_direction_down !== '.' && cell_direction_down !== 'b' && cell_direction_down !== '^') { 
-          if (nextY + this.pacManRadius >= cellTopBoundary) return false
-        } 
-      } else if (currY > nextY) { // PacMan going up
-        if (cell_direction_up_left !== '.' && cell_direction_up_left !== 'b' && cell_direction_up_left !== '^') {
-          if (nextY + this.pacManRadius >= cellBottomBoundary) return false
-        }
-      } else if (currX < nextX) { // PacMan going right
-        if (cell_direction_right !== '.' && cell_direction_right !== 'b' && cell_direction_right !== '^') {
-          if (nextX + this.pacManRadius >= cellRightBoundary) return false
-        }
-      } else if (currX > nextX) { // PacMan going left
-        if (cell_direction_up_left !== '.' && cell_direction_up_left !== 'b' && cell_direction_up_left !== '^') {
-          if (nextX + this.pacManRadius >= cellLeftBoundary) return false
-        }
+      // Determine which points to check based on the direction
+      if (direction.x === 0 && direction.y === -1) { // Moving up
+        pointsToCheck = [
+          { x: 0, y: 0}, // Top-left
+          { x: this.pacManRadius / 2, y: 0 }, // Top-center
+          { x: this.pacManRadius, y: 0 } // Top-right
+        ];
+      } else if (direction.x === 0 && direction.y === 1) { // Moving down
+        pointsToCheck = [
+          { x: 0, y: this.pacManRadius }, // Bottom-left
+          { x: this.pacManRadius / 2, y: this.pacManRadius }, // Bottom-center
+          { x: this.pacManRadius, y: this.pacManRadius }  // Bottom-right
+        ];
+      } else if (direction.x === -1 && direction.y === 0) { // Moving left
+        pointsToCheck = [
+          { x: 0, y: 0}, // Top-left
+          { x: 0, y: this.pacManRadius / 2 }, // Left-center
+          { x: 0, y: this.pacManRadius }  // Bottom-left
+        ];
+      } else if (direction.x === 1 && direction.y === 0) { // Moving right
+        pointsToCheck = [
+          { x: this.pacManRadius, y: 0 }, // Top-right
+          { x: this.pacManRadius, y: this.pacManRadius / 2 }, // Right-center
+          { x: this.pacManRadius, y: this.pacManRadius }  // Bottom-right
+        ];
       }
-      return true;
-    },
+      
+      // Perform the check for the selected points
+      const results = pointsToCheck.map(dir => checkPoint(nextX + dir.x, nextY + dir.y));
+      console.log("Walkable checks:", results);
+      return results.every(result => result);
+    },    
     isInGameBoundaries(x, y) {
       const pacManSize = this.pacManRadius;
       return (
