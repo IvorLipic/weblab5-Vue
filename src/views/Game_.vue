@@ -5,7 +5,7 @@
   </div>
   <div class="game" ref="gameElement">
     <canvas ref="gameCanvas"></canvas>
-    <PacMan />  
+    <PacMan /> 
   </div>  
 </template>
 
@@ -97,6 +97,7 @@ export default {
     };
 
     const handleKeydown = (event) => {
+      event.preventDefault();
       const { key } = event;
       let newDirection = null;
       
@@ -147,6 +148,7 @@ export default {
 }
 
 canvas {
+  position: absolute;
   display: block;
   width: 100%;
   height: 100%;

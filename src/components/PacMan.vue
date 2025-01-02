@@ -2,12 +2,12 @@
   <div
     :style="{
       position: 'absolute',
-      top: `${pacManPosition.y}px`,
-      left: `${pacManPosition.x}px`,
+      transform: `translate(${pacManPosition.x}px, ${pacManPosition.y}px)`,
       width: `${pacManRadius}px`,
       height: `${pacManRadius}px`,
       backgroundColor: 'yellow',
       borderRadius: '50%',
+      zIndex: 10
     }"
   ></div>
 </template>
