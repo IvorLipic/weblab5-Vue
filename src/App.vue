@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <!-- Navigation Bar (could be a simple header or links) -->
     <nav class="nav-bar">
       <router-link to="/" class="nav-link">Game</router-link>
       <router-link to="/high-scores" class="nav-link">High Scores</router-link>

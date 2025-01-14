@@ -1,27 +1,48 @@
 <template>
   <div class="score-lives-container">
-    <div class="score">Score: {{ score }}</div>
-    <div class="lives">Lives: {{ lives }}</div>
+    <div class="score">Score: {{ gameStore.score }}</div>
+    <div class="lives">Lives: {{ gameStore.lives }}</div>
   </div>
-  <div class="game" ref="gameElement">
+  <div v-if="!gameStore.hasWon && !gameStore.gameOver" class="game" ref="gameElement">
     <canvas ref="gameCanvas"></canvas>
     <PacMan /> 
+    <Ghost />
   </div>  
+  <div v-if="gameStore.hasWon" class="win-message">
+    <h1>GG</h1>
+    <button @click="levelCleared" class="restart-button">Continue</button>
+  </div>
+  <div v-if="gameStore.gameOver" class="win-message">
+    <h1>Game Over x_x</h1>
+    <button @click="restartGame" class="restart-button">Restart Game</button>
+  </div>
 </template>
 
 <script>
 import { onMounted, ref } from 'vue';
 import { useGameStore } from '../stores/gameStore.js';
 import PacMan from '../components/PacMan.vue';
+import Ghost from '../components/Ghost_.vue';
 
 export default {
   components: {
     PacMan,
+    Ghost
   },
   setup() {
     const gameStore = useGameStore();
     const gameElement = ref(null);
     const gameCanvas = ref(null);
+
+    const restartGame = () => {
+      gameStore.resetGame();
+      gameLoop();
+    };
+
+    const levelCleared = () => {
+      gameStore.levelCleared();
+      gameLoop();
+    }
 
     const drawMap = () => {
       const canvas = gameCanvas.value;
@@ -46,9 +67,7 @@ export default {
 
           let color = 'black';
           if (tile === '1' || tile === '2' || tile === '3' || tile === '4' || tile === '-' ||tile === '|' || tile === '[' || tile === ']') {
-            color = 'rgb(0,0,153)';
-          } else if (tile === 'X') {
-            color = 'rgb(153,0,0)';  
+            color = 'rgb(0,0,153)'; // Wall
           }
 
           // Draw the tile
@@ -85,15 +104,10 @@ export default {
     const updateGameDimensions = () => {
       if (gameElement.value) {
         gameStore.setGameDimensions(gameElement.value.offsetWidth, gameElement.value.offsetHeight);
-        gameStore.setInitialPacManPositionAndSize();
         drawMap();
+        gameStore.setInitialPacManPositionAndSize();
+        gameStore.setInitialGhostPosition();
       }
-    };
-
-    const gameLoop = () => {
-      gameStore.movePacMan();
-      drawMap();
-      requestAnimationFrame(gameLoop);
     };
 
     const handleKeydown = (event) => {
@@ -121,19 +135,34 @@ export default {
       }
     };
 
+    const gameLoop = () => {
+      if (gameStore.hasWon || gameStore.gameOver) {
+        return;
+      }
+      gameStore.movePacMan();
+      if (gameStore.ghostPath) {
+        gameStore.moveGhost();
+      }
+      drawMap();
+      requestAnimationFrame(gameLoop);
+    };
+
     onMounted(() => {
       updateGameDimensions();
-      gameStore.setInitialPacManPositionAndSize();
       window.addEventListener('resize', updateGameDimensions);
       window.addEventListener('keydown', handleKeydown);
+      setInterval(() => {
+        gameStore.updateGhostPath();
+      }, 500);
       gameLoop();
     });
 
     return {
       gameElement,
       gameCanvas,
-      score: gameStore.score,
-      lives: gameStore.lives,
+      gameStore,
+      restartGame,
+      levelCleared
     };
   },
 };
@@ -152,5 +181,28 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.win-message {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 2em;
+  color: white;
+}
+
+.restart-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #333;
+  color: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.restart-button:hover {
+  background-color: white;
+  color: #333;
 }
 </style>
