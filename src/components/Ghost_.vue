@@ -1,11 +1,13 @@
 <template>
     <div
+      v-for="ghost in ghosts"
+      :key="ghost.color"
       :style="{
         position: 'absolute',
-        transform: `translate(${ghostPosition.x}px, ${ghostPosition.y}px)`,
+        transform: `translate(${ghost.position.x}px, ${ghost.position.y}px)`,
         width: `${ghostRadius}px`,
         height: `${ghostRadius}px`,
-        backgroundColor: 'red',
+        backgroundColor: ghost.color,
         borderRadius: '50%',
         zIndex: 10
       }"
@@ -19,13 +21,13 @@
   export default {
     setup() {
       const gameStore = useGameStore();
-  
-      const ghostPosition = computed(() => gameStore.ghostPosition);
+
       const ghostRadius = computed(() => gameStore.pacManRadius);
-  
+      const ghosts = computed(() => gameStore.ghosts);
+
       return {
-        ghostPosition,
-        ghostRadius
+        ghostRadius,
+        ghosts
       };
     },
   };

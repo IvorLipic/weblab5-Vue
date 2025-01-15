@@ -1,5 +1,5 @@
 onmessage = function (e) {
-    const { map, ghostPosition, targetPosition, rows, cols } = e.data;
+    const { map, ghostPosition, targetPosition, rows, cols, ghostIndex } = e.data;
     
     // Reconstruct the 2D map
     const reconstructedMap = [];
@@ -54,6 +54,7 @@ onmessage = function (e) {
     };
   
     const path = bfs(reconstructedMap, ghostPosition, targetPosition);
-    postMessage({ path });
+
+    postMessage({ path, ghostIndex });
   };
   

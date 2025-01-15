@@ -15,54 +15,55 @@ export const useGameStore = defineStore('game', {
     cellHeight: 40,
     map: [
       ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
-      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'M', '|'],
       ['|', '.', '-', '-', '-', '-', '-', '-', '-', '.', '.', '-', '-', '-', '-', '-', '-', '-', '.', '|'],
       ['|', '.', '-', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '|'],
       ['|', '.', '.', '.', '.', '^', '.', '.', '-', '.', '.', '-', '.', '.', '^', '.', '.', '.', '.', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '-', '.', '.', '-', '.', '.', '.', '.', '-', '.', '-', '|'],
-      ['|', '-', '.', '-', '.', '[', ']', '.', '.', '.', 'X', '.', '.', '[', ']', '.', '-', '.', '-', '|'],
+      ['|', '-', '.', '-', '.', '[', ']', '.', '.', '.', '.', '.', '.', '[', ']', '.', '-', '.', '-', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
       ['|', '.', '.', '.', '.', '[', ']', '.', '.', '.', '.', '.', '.', '[', ']', '.', '.', '.', '.', '|'],
       ['|', '.', '-', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '|'],
       ['|', '.', '-', '-', '.', '[', '-', '-', '-', '-', '-', '-', '-', '-', ']', '.', '-', '-', '.', '|'],
-      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+      ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'X', '|'],
       ['4', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '3'],
     ],
-    ghostPosition: { x: 0, y: 0 },
-    ghostPath: [],
-    ghostSpeed: 3,
+    ghosts: [
+      { id: 1, position: { x: 0, y: 0 }, path: [], speed: 3, color: 'blue' },
+      { id: 2, position: { x: 100, y: 100 }, path: [], speed: 3, color: 'red' },
+    ],
   }),
   actions: {
     levelCleared() {
       this.map = this.getInitialMap();
       this.setInitialPacManPositionAndSize();
-      this.setInitialGhostPosition();
+      this.setInitialGhostPositions();
     },
     resetGame() {
       this.score = 0;
       this.lives = 3;
       this.map = this.getInitialMap();
       this.setInitialPacManPositionAndSize();
-      this.setInitialGhostPosition();
+      this.setInitialGhostPositions();
     },
     getInitialMap() {
       return [
         ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
-        ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+        ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'M', '|'],
         ['|', '.', '-', '-', '-', '-', '-', '-', '-', '.', '.', '-', '-', '-', '-', '-', '-', '-', '.', '|'],
         ['|', '.', '-', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '|'],
-        ['|', '.', '.', '.', '.', '^', '.', '.', '-', '.', '.', '-', '.', '.', '^', '.', '.', '.', '.', '|'],
+        ['|', '.', '.', '.', '.', '.', '.', '.', '-', '.', '.', '-', '.', '.', '.', '.', '.', '.', '.', '|'],
         ['|', '-', '.', '-', '.', '.', '.', '.', '-', '.', '.', '-', '.', '.', '.', '.', '-', '.', '-', '|'],
-        ['|', '-', '.', '-', '.', '[', ']', '.', '.', '.', 'X', '.', '.', '[', ']', '.', '-', '.', '-', '|'],
+        ['|', '-', '.', '-', '.', '[', ']', '.', '.', '.', '.', '.', '.', '[', ']', '.', '-', '.', '-', '|'],
         ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
         ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
         ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
         ['|', '.', '.', '.', '.', '[', ']', '.', '.', '.', '.', '.', '.', '[', ']', '.', '.', '.', '.', '|'],
         ['|', '.', '-', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '|'],
         ['|', '.', '-', '-', '.', '[', '-', '-', '-', '-', '-', '-', '-', '-', ']', '.', '-', '-', '.', '|'],
-        ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+        ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'X', '|'],
         ['4', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '3'],
       ];
     },
@@ -85,17 +86,6 @@ export const useGameStore = defineStore('game', {
             }
             this.pacManPosition.x = col * this.cellWidth + this.pacManRadius / 2;
             this.pacManPosition.y = row * this.cellHeight + this.pacManRadius / 2;
-            return;
-          }
-        }
-      }
-    },
-    setInitialGhostPosition() {
-      for (let row = 0; row < this.map.length; row++) {
-        for (let col = 0; col < this.map[row].length; col++) {
-          if (this.map[row][col] === 'X') {
-            this.ghostPosition.x = col * this.cellWidth + this.pacManRadius / 2;
-            this.ghostPosition.y = row * this.cellHeight + this.pacManRadius / 2;
             return;
           }
         }
@@ -126,7 +116,7 @@ export const useGameStore = defineStore('game', {
         const cellY = Math.floor(y / this.cellHeight);
         const cellValue = this.map[cellY]?.[cellX];
         //console.log(`Checking cell at (${cellX}, ${cellY}): ${cellValue}`);
-        return cellValue === '.' || cellValue === 'X' || cellValue === '^' || cellValue === ' '; // Walkable cells
+        return cellValue === '.' || cellValue === 'X' || cellValue === ' ' || cellValue === 'M'; // Walkable cells
       };
 
       let pointsToCheck = [];
@@ -172,50 +162,46 @@ export const useGameStore = defineStore('game', {
         y <= this.gameHeight - (this.cellHeight + pacManSize)
       );
     },
-    checkCollisionAndReset() {
+    checkCollisionAndReset(ghost) {
       const pacManCellX = Math.floor(this.pacManPosition.x / this.cellWidth);
       const pacManCellY = Math.floor(this.pacManPosition.y / this.cellHeight);
-      const ghostCellX = Math.floor(this.ghostPosition.x / this.cellWidth);
-      const ghostCellY = Math.floor(this.ghostPosition.y / this.cellHeight);
+      const ghostCellX = Math.floor(ghost.position.x / this.cellWidth);
+      const ghostCellY = Math.floor(ghost.position.y / this.cellHeight);
   
       if (pacManCellX === ghostCellX && pacManCellY === ghostCellY) {
         this.lives -= 1;
         this.setInitialPacManPositionAndSize();
-        this.setInitialGhostPosition();
+        this.setInitialGhostPositions();
       }
     },
     changeDirection(newDirection) {
       this.pacManDirection = newDirection;
     },
-    moveGhost() {
-      // Check if there's a path
-      if (this.ghostPath.length > 0) {
-        const nextPos = this.ghostPath[0];
-        const dx = nextPos.x * this.cellWidth - this.ghostPosition.x;
-        const dy = nextPos.y * this.cellHeight - this.ghostPosition.y;
+    setInitialGhostPositions() {
+      let ghostsStartPosition = [
+        { x: 0, y: 0 },
+        { x: 0, y: 0 }
+      ]; 
 
-        // Move the ghost towards the next path position
-        if (Math.abs(dx) > this.ghostSpeed || Math.abs(dy) > this.ghostSpeed) {
-          this.ghostPosition.x += Math.sign(dx) * this.ghostSpeed;
-          this.ghostPosition.y += Math.sign(dy) * this.ghostSpeed;
-        } else {
-          // If close enough to the target, set new target from the path
-          this.ghostPosition.x = nextPos.x * this.cellWidth;
-          this.ghostPosition.y = nextPos.y * this.cellHeight;
-          this.ghostPath.shift(); // Remove the reached path point
+      for (let row = 0; row < this.map.length; row++) {
+        for (let col = 0; col < this.map[row].length; col++) {
+          if (this.map[row][col] === 'X') {
+            ghostsStartPosition[0].x = col * this.cellWidth + this.pacManRadius / 2;
+            ghostsStartPosition[0].y = row * this.cellHeight + this.pacManRadius / 2; 
+          } else if (this.map[row][col] === 'M') {
+            ghostsStartPosition[1].x = col * this.cellWidth + this.pacManRadius / 2;
+            ghostsStartPosition[1].y = row * this.cellHeight + this.pacManRadius / 2;
+          }
         }
       }
-      this.checkCollisionAndReset();
+      this.ghosts.forEach((ghost, index) => {
+        ghost.position = ghostsStartPosition[index];
+      });
     },
-    updateGhostPath() {
-      // Send a request to the worker to calculate the path
+    async calculateGhostPaths() {
       const worker = new GhostWorker();
-      
+
       const serializedMap = this.map.map(row => [...row]);
-      const ghostPosition = {
-        x: Math.floor((this.ghostPosition.x + (this.pacManRadius / 2)) / this.cellWidth),
-        y: Math.floor((this.ghostPosition.y + (this.pacManRadius / 2)) / this.cellHeight),
-      };
       const targetPosition = {
         x: Math.floor(this.pacManPosition.x / this.cellWidth),
         y: Math.floor(this.pacManPosition.y / this.cellHeight),
@@ -223,18 +209,52 @@ export const useGameStore = defineStore('game', {
       const rows = this.map.length;
       const cols = this.map[0].length;
 
-      worker.postMessage({
-        map: serializedMap,
-        ghostPosition,
-        targetPosition,
-        rows,
-        cols
-      });
+      this.ghosts.forEach((ghost, index) => {
 
-      worker.onmessage = (event) => {
-        this.ghostPath = event.data.path;  // Update the ghost path with the new one
-        worker.terminate();
-      };
+        const ghostPosition = {
+          x: Math.floor((ghost.position.x + (this.pacManRadius / 2)) / this.cellWidth),
+          y: Math.floor((ghost.position.y + (this.pacManRadius / 2)) / this.cellHeight),
+        };
+
+        worker.postMessage({
+          map: serializedMap,
+          ghostPosition,
+          targetPosition,
+          rows,
+          cols,
+          ghostIndex: index
+        });
+
+        let pathsProcessed = 0;
+        const totalGhosts = this.ghosts.length;
+
+        worker.onmessage = (e) => {
+          const ghostIndex = e.data.ghostIndex;
+          this.ghosts[ghostIndex].path = e.data.path;
+          pathsProcessed++;
+          if (pathsProcessed === totalGhosts) {
+            worker.terminate();
+          }
+        };
+      });
+    },
+    moveGhosts() {
+      this.ghosts.forEach((ghost) => {
+        if (ghost.path?.length > 0) {
+          const nextPos = ghost.path[0];
+          const dx = nextPos.x * this.cellWidth - ghost.position.x;
+          const dy = nextPos.y * this.cellHeight - ghost.position.y;
+
+          if (Math.abs(dx) > ghost.speed || Math.abs(dy) > ghost.speed) {
+            ghost.position.x += Math.sign(dx) * ghost.speed;
+            ghost.position.y += Math.sign(dy) * ghost.speed;
+          } else {
+            ghost.position.x = nextPos.x * this.cellWidth;
+            ghost.position.y = nextPos.y * this.cellHeight;
+            ghost.path.shift();
+          }
+        }
+      });
     }
   },
   getters: {

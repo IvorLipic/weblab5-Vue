@@ -19,30 +19,79 @@
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, getCurrentInstance, onBeforeUnmount } from 'vue';
 import { useGameStore } from '../stores/gameStore.js';
 import PacMan from '../components/PacMan.vue';
 import Ghost from '../components/Ghost_.vue';
 
 export default {
+
   components: {
     PacMan,
     Ghost
   },
+
+  methods: {
+    handleKeydown(event) {
+      event.preventDefault();
+      const { key } = event;
+      let newDirection = null;
+      
+      switch (key) {
+        case 'ArrowUp':
+          newDirection = { x: 0, y: -1 };
+          break;
+        case 'ArrowDown':
+          newDirection = { x: 0, y: 1 };
+          break;
+        case 'ArrowLeft':
+          newDirection = { x: -1, y: 0 };
+          break;
+        case 'ArrowRight':
+          newDirection = { x: 1, y: 0 };
+          break;
+      }
+      
+      if (newDirection) {
+        this.gameStore.changeDirection(newDirection);
+      }
+    }
+  },
+
   setup() {
     const gameStore = useGameStore();
     const gameElement = ref(null);
     const gameCanvas = ref(null);
+    let ghostPathInterval;
+
+    //Required for accessing functions in the methods property
+    const instance = getCurrentInstance();
 
     const restartGame = () => {
       gameStore.resetGame();
+      setWorkerInterval();
       gameLoop();
     };
 
     const levelCleared = () => {
       gameStore.levelCleared();
+      setWorkerInterval();
       gameLoop();
     }
+
+    const setWorkerInterval = () => {
+      ghostPathInterval = setInterval(() => {
+        gameStore.calculateGhostPaths();
+        console.log("Calculating path.");
+      }, 100);
+    };
+
+    const stopWorkerPathfinding = () => {
+      if (ghostPathInterval) {
+        clearInterval(ghostPathInterval);
+        ghostPathInterval = null;
+      }
+    };
 
     const drawMap = () => {
       const canvas = gameCanvas.value;
@@ -85,17 +134,6 @@ export default {
               2 * Math.PI
             );
             ctx.fill();
-          } else if (tile === '^') { // Boosts (ability)
-            ctx.fillStyle = 'rgb(153,0,0)';
-            ctx.beginPath();
-            ctx.arc(
-              col * cellWidth + cellWidth / 2,
-              row * cellHeight + cellHeight / 2,
-              Math.min(cellWidth, cellHeight) / 6,
-              0,
-              2 * Math.PI
-            );
-            ctx.fill();
           }
         }
       }
@@ -106,55 +144,47 @@ export default {
         gameStore.setGameDimensions(gameElement.value.offsetWidth, gameElement.value.offsetHeight);
         drawMap();
         gameStore.setInitialPacManPositionAndSize();
-        gameStore.setInitialGhostPosition();
-      }
-    };
-
-    const handleKeydown = (event) => {
-      event.preventDefault();
-      const { key } = event;
-      let newDirection = null;
-      
-      switch (key) {
-        case 'ArrowUp':
-          newDirection = { x: 0, y: -1 };
-          break;
-        case 'ArrowDown':
-          newDirection = { x: 0, y: 1 };
-          break;
-        case 'ArrowLeft':
-          newDirection = { x: -1, y: 0 };
-          break;
-        case 'ArrowRight':
-          newDirection = { x: 1, y: 0 };
-          break;
-      }
-      
-      if (newDirection) {
-        gameStore.changeDirection(newDirection);
+        //gameStore.setInitialGhostPosition();
+        gameStore.setInitialGhostPositions();
       }
     };
 
     const gameLoop = () => {
       if (gameStore.hasWon || gameStore.gameOver) {
+        stopWorkerPathfinding();
         return;
-      }
+      } 
+
       gameStore.movePacMan();
-      if (gameStore.ghostPath) {
-        gameStore.moveGhost();
-      }
+      gameStore.moveGhosts();
       drawMap();
+
+      // Check collisions
+      gameStore.ghosts.forEach((ghost) => {
+        if (gameStore.checkCollisionAndReset(ghost)) {
+          gameStore.lives -= 1;
+          if (gameStore.lives <= 0) {
+            gameStore.gameOver = true;
+          }
+        }
+      });
+
       requestAnimationFrame(gameLoop);
     };
 
     onMounted(() => {
       updateGameDimensions();
       window.addEventListener('resize', updateGameDimensions);
-      window.addEventListener('keydown', handleKeydown);
-      setInterval(() => {
-        gameStore.updateGhostPath();
-      }, 500);
+      window.addEventListener('keydown', instance.proxy.handleKeydown);
+      setWorkerInterval();
       gameLoop();
+    });
+
+    onBeforeUnmount(() => {
+      // Clean up listeners and intervals when the component is destroyed
+      window.removeEventListener('resize', updateGameDimensions);
+      window.removeEventListener('keydown', instance.proxy.handleKeydown);
+      stopWorkerPathfinding();
     });
 
     return {
