@@ -1,3 +1,4 @@
+<!--8. b) Stateful component (uses gameStore) -->
 <template>
     <div
       v-for="ghost in ghosts"
@@ -19,15 +20,26 @@
   import { computed } from "vue";
   
   export default {
-    setup() {
+    emits: ["collision"],
+    setup(_, { emit }) {
       const gameStore = useGameStore();
-
       const ghostRadius = computed(() => gameStore.pacManRadius);
       const ghosts = computed(() => gameStore.ghosts);
 
+      // Move ghosts and check for collision
+      const updateGhosts = () => {
+        gameStore.moveGhosts();
+        gameStore.ghosts.forEach((ghost) => {
+          if (gameStore.checkCollisionAndReset(ghost)) {
+            emit("collision"); // 9. Emit event
+          }
+        });
+      };
+
       return {
         ghostRadius,
-        ghosts
+        ghosts,
+        updateGhosts
       };
     },
   };
