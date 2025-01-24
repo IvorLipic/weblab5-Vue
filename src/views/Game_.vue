@@ -1,20 +1,26 @@
 <template>
   <div class="score-lives-container">
-    <div class="score">Score: {{ gameStore.score }}</div>
-    <div class="lives">Lives: {{ gameStore.lives }}</div>
+    <div class="score">Score: {{ gameStore.score }}</div> <!-- 1. Interpolation/one-way binding -->
+    <div class="lives">Lives: {{ gameStore.lives }}</div> <!-- 1. Interpolation/one-way binding -->
   </div>
   <div v-if="!gameStore.hasWon && !gameStore.gameOver" class="game" ref="gameElement">
     <canvas ref="gameCanvas"></canvas>
     <PacMan /> 
-    <Ghost />
-  </div>  
+    <Ghost ref="ghostComponent" @collision="handleCollision"/>
+  </div>    
   <div v-if="gameStore.hasWon" class="win-message">
     <h1>GG</h1>
     <button @click="levelCleared" class="restart-button">Continue</button>
   </div>
   <div v-if="gameStore.gameOver" class="win-message">
-    <h1>Game Over x_x</h1>
+    <h1>Game Over</h1>
     <button @click="restartGame" class="restart-button">Restart Game</button>
+    <button 
+      v-if="!gameStore.scoreSaved" 
+      @click="saveScore" 
+      class="save-score-button">
+      Save Score
+    </button>
   </div>
 </template>
 
@@ -25,13 +31,11 @@ import PacMan from '../components/PacMan.vue';
 import Ghost from '../components/Ghost_.vue';
 
 export default {
-
   components: {
     PacMan,
     Ghost
   },
-
-  methods: {
+  methods: { // 3. Methods
     handleKeydown(event) {
       event.preventDefault();
       const { key } = event;
@@ -57,32 +61,39 @@ export default {
       }
     }
   },
-
   setup() {
     const gameStore = useGameStore();
+    const ghostComponent = ref(null);
     const gameElement = ref(null);
     const gameCanvas = ref(null);
-    let ghostPathInterval;
+    const gameLoopId = ref(null);
 
     //Required for accessing functions in the methods property
     const instance = getCurrentInstance();
 
+    let ghostPathInterval;
+
     const restartGame = () => {
+      updateGameDimensions();
       gameStore.resetGame();
       setWorkerInterval();
       gameLoop();
     };
 
     const levelCleared = () => {
+      updateGameDimensions();
       gameStore.levelCleared();
       setWorkerInterval();
       gameLoop();
     }
 
+    const saveScore = () => {
+      gameStore.saveGameResults();
+    }
+
     const setWorkerInterval = () => {
       ghostPathInterval = setInterval(() => {
         gameStore.calculateGhostPaths();
-        console.log("Calculating path.");
       }, 100);
     };
 
@@ -103,10 +114,8 @@ export default {
       canvas.width = gameStore.gameWidth;
       canvas.height = gameStore.gameHeight;
 
-      const cellWidth = canvas.width / map[0].length;
-      const cellHeight = canvas.height / map.length;
-
-      gameStore.setCellDimensions(cellWidth, cellHeight);
+      const cellWidth = gameStore.gameWidth / map[0].length;
+      const cellHeight = gameStore.gameHeight / map.length;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -139,39 +148,65 @@ export default {
       }
     };
 
+    const handleCollision = () => {
+      gameStore.lives -= 1;
+    };
+
     const updateGameDimensions = () => {
+      let width, height;
+
       if (gameElement.value) {
-        gameStore.setGameDimensions(gameElement.value.offsetWidth, gameElement.value.offsetHeight);
-        drawMap();
-        gameStore.setInitialPacManPositionAndSize();
-        //gameStore.setInitialGhostPosition();
-        gameStore.setInitialGhostPositions();
+        // Use the actual gameElement dimensions if available
+        width = gameElement.value.offsetWidth;
+        height = gameElement.value.offsetHeight;
+      } else {
+        // Calculate fallback dimensions based on CSS styling
+        const vw = window.innerWidth * 0.01; // 1% of the viewport width
+        const vh = window.innerHeight * 0.01; // 1% of the viewport height
+        width = 80 * vw; // 80vw
+        height = 80 * vh; // 80vh
       }
+
+      // Set game dimensions
+      gameStore.setGameDimensions(width, height);
+      gameStore.setCellDimensions(width / gameStore.map[0].length, height / gameStore.map.length);
+
+      // Prepare map, PacMan and ghosts
+      drawMap();
+      gameStore.setInitialPacManPositionAndSize();
+      gameStore.setInitialGhostPositions();
     };
 
     const gameLoop = () => {
-      if (gameStore.hasWon || gameStore.gameOver) {
-        stopWorkerPathfinding();
-        return;
-      } 
+      const loop = () => {
+        if (gameStore.hasWon || gameStore.gameOver) {
+          stopWorkerPathfinding();
+          return;
+        } 
 
-      gameStore.movePacMan();
-      gameStore.moveGhosts();
-      drawMap();
+        gameStore.movePacMan();
+        ghostComponent.value.updateGhosts();
+        drawMap();
 
-      // Check collisions
-      gameStore.ghosts.forEach((ghost) => {
-        if (gameStore.checkCollisionAndReset(ghost)) {
-          gameStore.lives -= 1;
-          if (gameStore.lives <= 0) {
-            gameStore.gameOver = true;
-          }
-        }
-      });
+        /*
+        gameStore.ghosts.forEach((ghost) => {
+          if (gameStore.checkCollisionAndReset(ghost)) gameStore.lives -= 1; // Continue the loop
+        });
+        */
 
-      requestAnimationFrame(gameLoop);
+        gameLoopId.value = requestAnimationFrame(loop);
+      };
+      gameLoopId.value = requestAnimationFrame(loop); // Start the loop
     };
 
+    const stopGameLoop  = () => {
+      if (gameLoopId.value) {
+        cancelAnimationFrame(gameLoopId.value); // Stop the animation frame
+        gameLoopId.value = null;
+      }
+    };
+
+    // 6. Lifecycle hooks
     onMounted(() => {
       updateGameDimensions();
       window.addEventListener('resize', updateGameDimensions);
@@ -181,24 +216,27 @@ export default {
     });
 
     onBeforeUnmount(() => {
-      // Clean up listeners and intervals when the component is destroyed
       window.removeEventListener('resize', updateGameDimensions);
       window.removeEventListener('keydown', instance.proxy.handleKeydown);
       stopWorkerPathfinding();
+      stopGameLoop();
     });
 
     return {
       gameElement,
       gameCanvas,
       gameStore,
+      ghostComponent,
       restartGame,
-      levelCleared
+      levelCleared,
+      saveScore,
+      handleCollision
     };
   },
 };
 </script>
 
-<style scoped>
+<style scoped> /* 5. Scoped style */
 .game {
   position: relative;
   width: 80vw;
@@ -231,7 +269,18 @@ canvas {
   cursor: pointer;
 }
 
-.restart-button:hover {
+.save-score-button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #333;
+  color: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.restart-button:hover .save-score-button:hover {
   background-color: white;
   color: #333;
 }
