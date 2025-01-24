@@ -1,8 +1,12 @@
+// 10. Store (pinia)
+
 import { defineStore } from 'pinia';
 import GhostWorker from '../workers/ghostWorker.js?worker';
+import { getDatabase, ref, push } from "firebase/database";
 
 export const useGameStore = defineStore('game', {
   state: () => ({
+    scoreSaved: false,
     score: 0,
     lives: 3,
     pacManPosition: { x: 0, y: 0 },
@@ -36,19 +40,36 @@ export const useGameStore = defineStore('game', {
     ],
   }),
   actions: {
+    async saveGameResults() {
+      try {
+        const db = getDatabase();
+        const resultsRef = ref(db);
+        await push(resultsRef, {
+          score: this.score,
+          pacManSpeed: this.pacManSpeed,
+          ghostSpeed: this.ghosts[0].speed,
+          timestamp: Date.now()
+        });
+        this.scoreSaved = true;
+        console.log("Game results saved successfully!");
+      } catch (error) {
+        console.error("Error saving game results:", error);
+      }
+    },
     levelCleared() {
       this.map = this.getInitialMap();
       this.setInitialPacManPositionAndSize();
       this.setInitialGhostPositions();
     },
     resetGame() {
+      this.scoreSaved = false;
       this.score = 0;
       this.lives = 3;
       this.map = this.getInitialMap();
       this.setInitialPacManPositionAndSize();
       this.setInitialGhostPositions();
     },
-    getInitialMap() {
+    getInitialMap() { 
       return [
         ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
         ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'M', '|'],
@@ -76,20 +97,13 @@ export const useGameStore = defineStore('game', {
       this.cellHeight = cellHeight;
     },
     setInitialPacManPositionAndSize() {
-      for (let row = 0; row < this.map.length; row++) {
-        for (let col = 0; col < this.map[row].length; col++) {
-          if (this.map[row][col] === '.') {
-            if (this.cellWidth < this.cellHeight) {
-              this.pacManRadius = this.cellWidth / 1.5;
-            } else {
-              this.pacManRadius = this.cellHeight / 1.5;
-            }
-            this.pacManPosition.x = col * this.cellWidth + this.pacManRadius / 2;
-            this.pacManPosition.y = row * this.cellHeight + this.pacManRadius / 2;
-            return;
-          }
-        }
+      if (this.cellWidth < this.cellHeight) {
+        this.pacManRadius = this.cellWidth / 1.5;
+      } else {
+        this.pacManRadius = this.cellHeight / 1.5;
       }
+      this.pacManPosition.x = this.cellWidth + this.pacManRadius / 2;
+      this.pacManPosition.y = this.cellHeight + this.pacManRadius / 2;
     },
     movePacMan() {
       const nextX = Math.round(this.pacManPosition.x + this.pacManDirection.x * this.pacManSpeed);

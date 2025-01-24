@@ -1,3 +1,4 @@
+<!--8. b) Stateful component (uses gameStore) -->
 <template>
   <div
     :style="{
@@ -20,7 +21,7 @@ export default {
   setup() {
     const gameStore = useGameStore();
 
-    // Reactive properties cause component to re-render enabling animation
+    // 4. Computed properties
     const pacManPosition = computed(() => gameStore.pacManPosition);
     const pacManRadius = computed(() => gameStore.pacManRadius); 
 

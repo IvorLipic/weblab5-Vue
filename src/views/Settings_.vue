@@ -12,7 +12,7 @@
           v-model="gameStore.pacManSpeed"
           class="w-full mt-2"
         />
-        <p class="text-sm text-gray-500">Current: {{ gameStore.pacManSpeed }}</p>
+        <p class="text-sm text-gray-500">Current: {{ gameStore.pacManSpeed }}</p> <!--2. Two-way binding -->
       </div>
   
       <div>

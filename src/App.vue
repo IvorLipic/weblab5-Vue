@@ -6,7 +6,7 @@
       <router-link to="/settings" class="nav-link">Settings</router-link>
     </nav>
     <!-- Router View will show the active route's component -->
-    <router-view />
+    <router-view /> 
   </div>
 </template>
 
