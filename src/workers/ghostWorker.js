@@ -8,10 +8,10 @@ onmessage = function (e) {
     }
     
     const directions = [
-      { x: 0, y: -1 }, // Up
-      { x: 0, y: 1 },  // Down
-      { x: -1, y: 0 }, // Left
-      { x: 1, y: 0 },  // Right
+      { x: 0, y: -1 },
+      { x: 0, y: 1 }, 
+      { x: -1, y: 0 },
+      { x: 1, y: 0 },
     ];
   
     const bfs = (map, start, target) => {
