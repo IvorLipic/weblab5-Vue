@@ -40,7 +40,7 @@ onmessage = function (e) {
             nextY >= 0 &&
             nextY < rows &&
             !visited[nextY][nextX] &&
-            ['.', 'b', '^', ' ', 'X'].includes(map[nextY][nextX])
+            ['.', 'b', '^', ' ', 'X', 'M'].includes(map[nextY][nextX])
           ) {
             visited[nextY][nextX] = true;
             queue.push({

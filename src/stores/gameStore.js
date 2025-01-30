@@ -22,7 +22,7 @@ export const useGameStore = defineStore('game', {
       ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 'M', '|'],
       ['|', '.', '-', '-', '-', '-', '-', '-', '-', '.', '.', '-', '-', '-', '-', '-', '-', '-', '.', '|'],
       ['|', '.', '-', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '-', '.', '|'],
-      ['|', '.', '.', '.', '.', '^', '.', '.', '-', '.', '.', '-', '.', '.', '^', '.', '.', '.', '.', '|'],
+      ['|', '.', '.', '.', '.', '.', '.', '.', '-', '.', '.', '-', '.', '.', '.', '.', '.', '.', '.', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '-', '.', '.', '-', '.', '.', '.', '.', '-', '.', '-', '|'],
       ['|', '-', '.', '-', '.', '[', ']', '.', '.', '.', '.', '.', '.', '[', ']', '.', '-', '.', '-', '|'],
       ['|', '-', '.', '-', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '-', '.', '-', '|'],
@@ -223,6 +223,9 @@ export const useGameStore = defineStore('game', {
       const rows = this.map.length;
       const cols = this.map[0].length;
 
+      let pathsProcessed = 0;
+      const totalGhosts = this.ghosts.length;
+
       this.ghosts.forEach((ghost, index) => {
 
         const ghostPosition = {
@@ -238,9 +241,6 @@ export const useGameStore = defineStore('game', {
           cols,
           ghostIndex: index
         });
-
-        let pathsProcessed = 0;
-        const totalGhosts = this.ghosts.length;
 
         worker.onmessage = (e) => {
           const ghostIndex = e.data.ghostIndex;
