@@ -226,6 +226,15 @@ export const useGameStore = defineStore('game', {
       let pathsProcessed = 0;
       const totalGhosts = this.ghosts.length;
 
+      worker.onmessage = (e) => {
+        const ghostIndex = e.data.ghostIndex;
+        this.ghosts[ghostIndex].path = e.data.path;
+        pathsProcessed++;
+        if (pathsProcessed === totalGhosts) {
+          worker.terminate();
+        }
+      };
+
       this.ghosts.forEach((ghost, index) => {
 
         const ghostPosition = {
@@ -241,15 +250,6 @@ export const useGameStore = defineStore('game', {
           cols,
           ghostIndex: index
         });
-
-        worker.onmessage = (e) => {
-          const ghostIndex = e.data.ghostIndex;
-          this.ghosts[ghostIndex].path = e.data.path;
-          pathsProcessed++;
-          if (pathsProcessed === totalGhosts) {
-            worker.terminate();
-          }
-        };
       });
     },
     moveGhosts() {
