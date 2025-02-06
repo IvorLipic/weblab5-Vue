@@ -213,44 +213,37 @@ export const useGameStore = defineStore('game', {
       });
     },
     async calculateGhostPaths() {
-      const worker = new GhostWorker();
-
-      const serializedMap = this.map.map(row => [...row]);
-      const targetPosition = {
-        x: Math.floor(this.pacManPosition.x / this.cellWidth),
-        y: Math.floor(this.pacManPosition.y / this.cellHeight),
-      };
-      const rows = this.map.length;
-      const cols = this.map[0].length;
-
-      let pathsProcessed = 0;
-      const totalGhosts = this.ghosts.length;
-
-      worker.onmessage = (e) => {
-        const ghostIndex = e.data.ghostIndex;
-        this.ghosts[ghostIndex].path = e.data.path;
-        pathsProcessed++;
-        if (pathsProcessed === totalGhosts) {
-          worker.terminate();
-        }
-      };
-
-      this.ghosts.forEach((ghost, index) => {
-
-        const ghostPosition = {
-          x: Math.floor((ghost.position.x + (this.pacManRadius / 2)) / this.cellWidth),
-          y: Math.floor((ghost.position.y + (this.pacManRadius / 2)) / this.cellHeight),
-        };
-
-        worker.postMessage({
-          map: serializedMap,
-          ghostPosition,
-          targetPosition,
-          rows,
-          cols,
-          ghostIndex: index
+      return Promise.all(this.ghosts.map((ghost, index) => {
+        return new Promise((resolve) => {
+          const worker = new GhostWorker();
+          const serializedMap = this.map.map(row => [...row]);
+    
+          const targetPosition = {
+            x: Math.floor(this.pacManPosition.x / this.cellWidth),
+            y: Math.floor(this.pacManPosition.y / this.cellHeight),
+          };
+    
+          const ghostPosition = {
+            x: Math.floor((ghost.position.x + (this.pacManRadius / 2)) / this.cellWidth),
+            y: Math.floor((ghost.position.y + (this.pacManRadius / 2)) / this.cellHeight),
+          };
+    
+          worker.onmessage = (e) => {
+            this.ghosts[e.data.ghostIndex].path = e.data.path;
+            worker.terminate();
+            resolve();
+          };
+    
+          worker.postMessage({
+            map: serializedMap,
+            ghostPosition,
+            targetPosition,
+            rows: this.map.length,
+            cols: this.map[0].length,
+            ghostIndex: index
+          });
         });
-      });
+      }));
     },
     moveGhosts() {
       this.ghosts.forEach((ghost) => {
