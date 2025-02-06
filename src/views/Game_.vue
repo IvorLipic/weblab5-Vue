@@ -91,10 +91,15 @@ export default {
       gameStore.saveGameResults();
     }
 
+    let isCalculatingPaths = false;
+
     const setWorkerInterval = () => {
-      ghostPathInterval = setInterval(() => {
-        gameStore.calculateGhostPaths();
-      }, 100);
+      ghostPathInterval = setInterval(async () => {
+        if (isCalculatingPaths) return; // Prevent overlapping calculations
+        isCalculatingPaths = true;
+        await gameStore.calculateGhostPaths();
+        isCalculatingPaths = false;
+      }, 200);
     };
 
     const stopWorkerPathfinding = () => {
